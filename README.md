@@ -227,3 +227,5 @@ The same selector strategy applies — no generated IDs.
 2. **Cross-tenant data**: `06-multi-tenant.spec.ts` uses placeholder org names (`OtherCorp`). Update with real org names seeded in the test environment.
 3. **Module-specific tests**: Add specs for Training, Phishing, Policy Management, Incident Response etc. under `tests/regression/` following the same POM pattern.
 4. **Future ODC projects** (Macau etc.): Mandate `data-testid` from day one — request devs add the Attributes property to all interactive elements in OutSystems ODC.
+#   A v o t e c h - - - d e m o - - - t e s t  
+ 
