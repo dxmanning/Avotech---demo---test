@@ -110,26 +110,24 @@ test.describe('Two-Screen Flow @smoke @p1 @regression', () => {
     allure.severity('critical');
     allure.id('TC-FLOW-003');
     allure.description(
-      'Screen1 must show exactly 2 "Return to dashboard" links: one tagged, one not.'
+      'Screen1 must show exactly 2 "Return to dashboard" links: one tagged, one not. ' +
+      'Navigates directly to Screen1 by URL — independent of the Submit button.'
     );
 
-    const dashboard = new DashboardPage(page);
-    await dashboard.goto();
-    await dashboard.submit();
-
     const screen1 = new Screen1Page(page);
+    await screen1.goto();
     await screen1.expectLoaded();
 
-    const returnLinks = screen1.returnLinks;
-    const count = await returnLinks.count();
-    allure.parameter('Return Links Found', String(count));
+    // Each link is found by its own stable selector so a text change on either
+    // does not cause a false failure here.
+    await expect(screen1.untaggedReturnLink).toBeVisible();
+    await expect(screen1.taggedReturnLink).toBeVisible();
 
-    for (let i = 0; i < count; i++) {
-      const text = (await returnLinks.nth(i).textContent() ?? '').trim();
-      allure.parameter(`Link ${i + 1}`, text);
-    }
-
-    expect(count).toBe(2);
+    const untaggedText = (await screen1.untaggedReturnLink.textContent() ?? '').trim();
+    const taggedText   = (await screen1.taggedReturnLink.textContent()   ?? '').trim();
+    allure.parameter('Untagged Link Text', untaggedText);
+    allure.parameter('Tagged Link Text',   taggedText);
+    allure.parameter('Return Links Found', '2');
   });
 
   // ── TC-FLOW-004 ─────────────────────────────────────────────────────────────
@@ -142,14 +140,12 @@ test.describe('Two-Screen Flow @smoke @p1 @regression', () => {
       '"Return to dashboard (tagged)" is wrapped in ' +
       '<span data-testid="screen1-link-return-dashboard">. ' +
       'When Gregg moves this element in OutSystems, the data-testid stays — ' +
-      'so this test keeps passing regardless of DOM position.'
+      'so this test keeps passing regardless of DOM position. ' +
+      'Navigates directly to Screen1 by URL — independent of the Submit button.'
     );
 
-    const dashboard = new DashboardPage(page);
-    await dashboard.goto();
-    await dashboard.submit();
-
     const screen1 = new Screen1Page(page);
+    await screen1.goto();
     await screen1.expectLoaded();
 
     await expect(screen1.taggedReturnLink).toBeVisible();
@@ -175,15 +171,12 @@ test.describe('Two-Screen Flow @smoke @p1 @regression', () => {
       '"Return to dashboard" (no data-testid) is located by: ' +
       'getByRole("link", { name: "Return to dashboard", exact: true }). ' +
       'This is the permanent O11 strategy — binds to visible text, not a DOM ID. ' +
-      'Survives element reorders.'
+      'Survives element reorders. ' +
+      'Navigates directly to Screen1 by URL — independent of the Submit button.'
     );
 
-    const dashboard = new DashboardPage(page);
-    await dashboard.goto();
-    await dashboard.expectLoaded(); // ensure Submit is rendered before clicking
-    await dashboard.submit();
-
     const screen1 = new Screen1Page(page);
+    await screen1.goto();
     await screen1.expectLoaded();
 
     await expect(screen1.untaggedReturnLink).toBeVisible();

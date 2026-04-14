@@ -53,11 +53,15 @@ export class Screen1Page extends BasePage {
   // ── All content links (excludes nav/skip links) ────────────────────────────
 
   /**
-   * The two meaningful content links on this page.
-   * Filtered to links pointing to /QATestApp/Dashboard.
+   * Both return-to-dashboard links, found by their respective stable selectors:
+   *   - Tagged link   → data-testid (survives text changes by Gregg)
+   *   - Untagged link → role + exact text
+   *
+   * Using .or() instead of a shared text regex means TC-FLOW-003 stays green
+   * even when the tagged link's label is changed in OutSystems.
    */
   get returnLinks(): Locator {
-    return this.page.getByRole('link', { name: /return to dashboard/i });
+    return this.taggedReturnLink.or(this.untaggedReturnLink);
   }
 
   // ── Page body text ─────────────────────────────────────────────────────────
@@ -74,8 +78,10 @@ export class Screen1Page extends BasePage {
 
   async expectLoaded(): Promise<void> {
     await this.waitForAppReady();
-    // Screen1 always shows the "Hello random stranger" text and at least one link
-    await expect(this.untaggedReturnLink).toBeVisible({ timeout: 15_000 });
+    // Use the tagged link as the "page ready" anchor — it has data-testid so it
+    // is guaranteed to be present regardless of what other elements Gregg adds or
+    // removes. The untagged link is optional content and must NOT be the anchor.
+    await expect(this.taggedReturnLink).toBeVisible({ timeout: 15_000 });
   }
 
   async clickTaggedReturnLink(): Promise<void> {

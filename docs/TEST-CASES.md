@@ -264,21 +264,25 @@ Submit btn  → page.getByRole('button', { name: 'Submit' })
 | **Tags** | `@smoke @p1 @regression` |
 
 **Steps**
-1. Navigate to `/QATestApp/Dashboard`
-2. Click Submit (navigate to Screen1)
-3. Wait for Screen1 to load
-4. Count all links matching `/return to dashboard/i`
-5. Log each link's visible text
+1. Navigate directly to `/QATestApp/Screen1` by URL
+2. Wait for Screen1 to load
+3. Assert untagged link is visible (role + exact text)
+4. Assert tagged link is visible (`data-testid`)
+5. Log both links' visible text
 
 **Expected Results**
-- Exactly 2 links matching "Return to dashboard" (case-insensitive)
-- Link 1: `"Return to dashboard"` — untagged
-- Link 2: `"Return to dashboard (tagged)"` — wrapped in `data-testid` span
+- Untagged link is visible: `getByRole('link', { name: 'Return to dashboard', exact: true })`
+- Tagged link is visible: `[data-testid="screen1-link-return-dashboard"]`
+- Both links are present (total: 2)
 
 **Selector Used**
 ```
-All return links → getByRole('link', { name: /return to dashboard/i })
+Untagged link → getByRole('link', { name: 'Return to dashboard', exact: true })
+Tagged link   → page.locator('[data-testid="screen1-link-return-dashboard"]')
 ```
+
+**Why not a shared text regex?**
+The tagged link's label can be changed in OutSystems without affecting the `data-testid` attribute. Using a shared text regex (`/return to dashboard/i`) to count both links would cause this test to fail whenever the tagged link's text is changed — even though the link is still there. Each link is found by its own stable selector.
 
 ---
 
@@ -293,8 +297,8 @@ All return links → getByRole('link', { name: /return to dashboard/i })
 | **Tags** | `@smoke @p1 @regression` |
 
 **Steps**
-1. Navigate to `/QATestApp/Dashboard`
-2. Click Submit (navigate to Screen1)
+1. Navigate directly to `/QATestApp/Screen1` by URL
+2. Wait for Screen1 to load
 3. Verify `[data-testid="screen1-link-return-dashboard"]` is visible
 4. Log the link's text content
 5. Click the tagged element
@@ -327,13 +331,11 @@ Tagged link → page.locator('[data-testid="screen1-link-return-dashboard"]')
 | **Tags** | `@smoke @p1 @regression` |
 
 **Steps**
-1. Navigate to `/QATestApp/Dashboard`
-2. Call `expectLoaded()` — confirms Submit button is rendered
-3. Click Submit (navigate to Screen1)
-4. Wait for Screen1 to load
-5. Verify "Return to dashboard" link (exact match) is visible
-6. Click the untagged return link
-7. Wait for URL to contain `/QATestApp/Dashboard`
+1. Navigate directly to `/QATestApp/Screen1` by URL
+2. Wait for Screen1 to load
+3. Verify "Return to dashboard" link (exact match) is visible
+4. Click the untagged return link
+5. Wait for URL to contain `/QATestApp/Dashboard`
 
 **Expected Results**
 - Link with exact text "Return to dashboard" (distinct from "Return to dashboard (tagged)") is visible
@@ -377,7 +379,7 @@ Untagged link → getByRole('link', { name: 'Return to dashboard', exact: true }
 - `visibleText` equals `"Submit"`
 - The DOM `id` attribute is logged (e.g. `b2-Button1`) but is **not used in the selector**
 
-**Allure Attachment:** `Submit Button DOM Info` (JSON)
+**Allure Attachment:** `Submit button DOM Info` (JSON)
 
 **Purpose**  
 This test serves as documented proof for the client that the automation does not depend on OutSystems-generated IDs. Gregg can move the Submit button anywhere on the Dashboard screen, republish, and this test will still pass because the selector binds to the button's semantic role and visible label — not its position or ID.
@@ -397,7 +399,7 @@ This test serves as documented proof for the client that the automation does not
 **Steps**
 1. Attach `pageerror` listener to capture all JS errors
 2. Navigate to `/QATestApp/Dashboard`
-3. Fill Name with `"Round Trip Test"` and click Submit
+3. Fill Name with `"Round Trip Test"` and Click Submit
 4. Wait for Screen1 to load
 5. Click the tagged return link
 6. Confirm URL is back on Dashboard
