@@ -1,0 +1,70 @@
+# GitLab CI equivalent — rename to .gitlab-ci.yml and place at repo root if using GitLab
+# This file is provided as a reference alongside the GitHub Actions workflow.
+
+# stages:
+#   - smoke
+#   - regression
+#   - report
+
+# variables:
+#   BASE_URL: https://personal-oajqxmji.outsystemscloud.com/QATestApp
+#   USE_BROWSERSTACK: "false"
+
+# .node-setup: &node-setup
+#   image: mcr.microsoft.com/playwright:v1.42.0-jammy
+#   before_script:
+#     - npm ci
+#   cache:
+#     key: ${CI_COMMIT_REF_SLUG}
+#     paths:
+#       - node_modules/
+
+# smoke-tests:
+#   <<: *node-setup
+#   stage: smoke
+#   script:
+#     - npx playwright test --grep @smoke --project=chromium
+#   artifacts:
+#     when: always
+#     paths:
+#       - allure-results/
+#       - playwright-report/
+#     expire_in: 1 week
+
+# p1-regression-chromium:
+#   <<: *node-setup
+#   stage: regression
+#   needs: [smoke-tests]
+#   script:
+#     - npx playwright test --grep @p1 --project=chromium
+#   artifacts:
+#     when: always
+#     paths:
+#       - allure-results/
+#     expire_in: 2 weeks
+
+# p1-regression-firefox:
+#   <<: *node-setup
+#   stage: regression
+#   needs: [smoke-tests]
+#   script:
+#     - npx playwright install --with-deps firefox
+#     - npx playwright test --grep @p1 --project=firefox
+#   artifacts:
+#     when: always
+#     paths:
+#       - allure-results/
+#     expire_in: 2 weeks
+
+# allure-report:
+#   stage: report
+#   image: frankescobar/allure-docker-service
+#   needs: [p1-regression-chromium, p1-regression-firefox]
+#   script:
+#     - allure generate allure-results --clean -o allure-report
+#   artifacts:
+#     paths:
+#       - allure-report/
+#     expire_in: 30 days
+#   pages:
+#     publish: allure-report

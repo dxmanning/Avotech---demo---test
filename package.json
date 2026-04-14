@@ -1,0 +1,35 @@
+{
+  "name": "csi-regression-suite",
+  "version": "1.0.0",
+  "description": "Playwright regression test suite for AvoTech CSI Platform (QATestApp)",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:smoke": "playwright test --grep \"@smoke\" --project=chromium",
+    "test:p1": "playwright test --grep \"@p1\"",
+    "test:regression": "playwright test --grep \"@regression\"",
+    "allure:generate": "allure generate allure-results --clean -o allure-report",
+    "allure:open": "allure open allure-report",
+    "allure:serve": "allure serve allure-results",
+    "report": "npm run allure:generate && npm run allure:open",
+    "logs": "ts-node --project tsconfig.json utils/showLogs.ts",
+    "logs:fails": "ts-node --project tsconfig.json utils/showLogs.ts --fails",
+    "lint": "eslint tests/**/*.ts pages/**/*.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.42.0",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "allure-playwright": "^2.12.0",
+    "dotenv": "^16.4.5",
+    "eslint": "^8.57.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "allure-js-commons": "^2.12.0"
+  }
+}

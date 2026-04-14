@@ -1,0 +1,1 @@
+{"runId":"2026-04-13T10-35-51-196Z","timestamp":"2026-04-13T10:35:51.197Z","duration":"1m 1s","status":"passed","summary":{"total":12,"passed":12,"failed":0,"skipped":0,"timedOut":0,"passRate":"100%"},"environment":{"baseUrl":"https://personal-oajqxmji.outsystemscloud.com/QATestApp","platform":"win32","nodeVersion":"v24.14.1","buildId":"local-build"}}
