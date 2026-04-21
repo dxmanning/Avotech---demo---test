@@ -37,6 +37,12 @@ export default defineConfig({
   timeout: 60_000,
   expect: {
     timeout: 10_000,
+    // Gregg's requirement: on VRT failure, HTML report shows Expected / Actual / Diff (pixel delta).
+    toHaveScreenshot: {
+      animations: 'disabled',
+      maxDiffPixels: 800,
+      threshold: 0.2,
+    },
   },
   reporter: [
     ['list'],
@@ -66,53 +72,71 @@ export default defineConfig({
 
   projects: USE_BROWSERSTACK
     ? [
-        // BrowserStack cross-browser / cross-OS matrix
+        // BrowserStack cross-browser / cross-OS matrix (VRT lives in Playwright snapshots — local project only)
         {
           name: 'BS-Chrome-Windows',
+          testIgnore: 'visual/**',
           use: {
             connectOptions: { wsEndpoint: bsCdpEndpoint(bsCapabilities('chrome', 'Windows', '11')) },
           },
         },
         {
           name: 'BS-Firefox-Windows',
+          testIgnore: 'visual/**',
           use: {
             connectOptions: { wsEndpoint: bsCdpEndpoint(bsCapabilities('firefox', 'Windows', '11')) },
           },
         },
         {
           name: 'BS-Safari-macOS',
+          testIgnore: 'visual/**',
           use: {
             connectOptions: { wsEndpoint: bsCdpEndpoint(bsCapabilities('safari', 'OS X', 'Ventura')) },
           },
         },
         {
           name: 'BS-Edge-Windows',
+          testIgnore: 'visual/**',
           use: {
             connectOptions: { wsEndpoint: bsCdpEndpoint(bsCapabilities('edge', 'Windows', '11')) },
           },
         },
       ]
     : [
-        // Local browser matrix
+        // Local browser matrix — excludes visual/ (single-browser baselines in vrt-chromium)
         {
           name: 'chromium',
+          testIgnore: 'visual/**',
           use: { ...devices['Desktop Chrome'] },
         },
         {
           name: 'firefox',
+          testIgnore: 'visual/**',
           use: { ...devices['Desktop Firefox'] },
         },
         {
           name: 'webkit',
+          testIgnore: 'visual/**',
           use: { ...devices['Desktop Safari'] },
         },
         {
           name: 'mobile-chrome',
+          testIgnore: 'visual/**',
           use: { ...devices['Pixel 7'] },
         },
         {
           name: 'mobile-safari',
+          testIgnore: 'visual/**',
           use: { ...devices['iPhone 14'] },
+        },
+        {
+          name: 'vrt-chromium',
+          testMatch: 'visual/**/*.spec.ts',
+          use: {
+            ...devices['Desktop Chrome'],
+            viewport: { width: 1280, height: 720 },
+            deviceScaleFactor: 1,
+          },
         },
       ],
 });

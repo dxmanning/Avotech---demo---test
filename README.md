@@ -1,231 +1,219 @@
-# CSI Platform — Automated Regression Suite
+﻿# CSI QATestApp Demo - Complete Documentation
 
-Playwright (TypeScript) regression tests for the AvoTech CSI Platform.  
-**Test App:** https://personal-oajqxmji.outsystemscloud.com/QATestApp
+Automated regression test framework for the AvoTech CSI proof-of-concept on OutSystems O11.
 
----
+- App under test: `https://personal-oajqxmji.outsystemscloud.com/QATestApp`
+- Scope: two-screen no-auth demo flow
+- Goal: prove stable selector strategy for O11 and provide CI/reporting/logging baseline for CSI
 
-## Stack
+## 1) Technology Stack
 
 | Layer | Tool |
 |---|---|
-| Web Automation | Playwright 1.42 + TypeScript |
-| Reporting | Allure Report |
-| CI/CD | GitHub Actions (+ GitLab CI reference) |
-| Cross-Browser Cloud | BrowserStack |
+| Web automation | Playwright + TypeScript |
+| Reporting | Allure, Playwright HTML, JUnit XML |
+| Custom run history | `utils/ResultsReporter.ts` + `utils/showLogs.ts` |
+| CI/CD | GitHub Actions (`.github/workflows/regression.yml`) |
+| Cloud execution (optional) | BrowserStack via Playwright CDP |
 
----
+## 2) Selector Strategy (Most Important Rule)
 
-## Selector Strategy — Critical Reading
+### CSI / O11 strategy
+Use semantic selectors first:
 
-### The OutSystems O11 Problem
+- `getByRole(...)`
+- `getByLabel(...)`
+- `getByPlaceholder(...)`
+- `getByText(...)`
 
-OutSystems O11 **auto-regenerates DOM element IDs on every publish**:
+Do not use generated OutSystems IDs or brittle XPaths.
 
+### `data-testid` usage
+
+- In this demo, only one confirmed test id exists on Screen1:
+  - `data-testid="screen1-link-return-dashboard"`
+- Use this directly for the tagged link tests.
+- For ODC (Macau), enforce `data-testid` broadly from day one.
+
+## 3) App Model Used by the Tests
+
+### Dashboard (`/QATestApp/Dashboard`)
+- Name text input
+- Submit button (`getByRole('button', { name: 'Submit' })`)
+- Submit navigates to Screen1
+
+### Screen1 (`/QATestApp/Screen1`)
+- Tagged return link (`data-testid="screen1-link-return-dashboard"`)
+- Untagged return link (`getByRole('link', { name: 'Return to dashboard', exact: true })`)
+
+## 4) Repository Structure
+
+```text
+.
+|- playwright.config.ts
+|- package.json
+|- pages/
+|  |- BasePage.ts
+|  |- DashboardPage.ts
+|  |- Screen1Page.ts
+|  |- Screen2Page.ts              (legacy/unused in current tests)
+|  \- index.ts
+|- tests/regression/
+|  |- 01-app-health.spec.ts
+|  |- 02-two-screen-flow.spec.ts
+|  \- 07-performance-accessibility.spec.ts
+|- fixtures/
+|  |- testData.ts
+|  \- customFixtures.ts
+|- utils/
+|  |- ResultsReporter.ts
+|  |- showLogs.ts
+|  \- allureHelpers.ts
+|- docs/
+|  \- TEST-CASES.md
+\- .github/workflows/regression.yml
 ```
-Before publish:  <input id="b4-Input_Username" ...>
-After publish:   <input id="b5-Input_Username" ...>   ← breaks your test
-```
 
-This means **you must never write selectors that target OS-generated IDs or internal class names** like `#wt12_wtMainContent` or `.OSBlock-content`.
-
-### The Permanent Solution for CSI (O11)
-
-Because the AvoTech development team does not have capacity to backfill `data-testid` attributes across the existing O11 codebase, **role-based and text selectors are the permanent strategy for CSI**.
-
-Playwright's built-in semantic locators bind to what the **user sees and what ARIA exposes** — not to generated IDs. These survive republishes:
-
-| Selector | Use for | Example |
-|---|---|---|
-| `getByRole('button', { name })` | Any button | Submit, Save, Delete, Cancel |
-| `getByRole('link', { name })` | Navigation links | Nav items, breadcrumbs |
-| `getByLabel(text)` | Form fields with labels | Username, Password inputs |
-| `getByPlaceholder(text)` | Inputs without labels | Search box |
-| `getByText(text)` | Visible text assertions | Error messages, status labels |
-| `getByRole('table')` | Data tables | Record lists |
-| `getByRole('dialog')` | Modals / popups | Confirmation dialogs |
-| `getByRole('alert')` | Feedback messages | Success/error toasts |
-| `getByRole('navigation')` | Navigation menus | Sidebar, top bar |
-
-### DO NOT use
-
-```typescript
-// ❌ WRONG — ID regenerates on every OutSystems publish
-page.locator('#b4-Input_Username')
-page.locator('.wt12_wtMainContent')
-page.locator('xpath=//div[@id="wt12"]//input[3]')
-
-// ✅ CORRECT — binds to visible label, survives republish
-page.getByLabel(/username/i)
-page.getByRole('button', { name: /log in/i })
-page.getByRole('table').getByRole('row')
-```
-
-### data-testid — When to Use It
-
-`data-testid` attributes are **only used in this suite** when a developer has already explicitly applied the OutSystems "Tagged" / Extended Property to an element.
-
-The client confirmed one such element exists on `/Screen1` as a demo. This is the **exception**, not the pattern for O11.
-
-**For new OutSystems ODC projects** (e.g. the Macau project), `data-testid` should be the primary strategy — request developers apply the "Attributes" property to all interactive elements from the start.
-
----
-
-## UI Elements That Should Have data-testid in New (ODC) Projects
-
-| Category | Elements |
-|---|---|
-| User Actions | Buttons, inputs, dropdowns, checkboxes |
-| Critical Assertions | Success messages, error messages, status labels |
-| Dynamic Content | Table rows, action buttons in rows, cards, modals |
-| Navigation | Tabs, sidebar menu items |
-| **Not needed** | Static text, layout divs, styling elements, decorative icons |
-
----
-
-## Quick Start
+## 5) Setup
 
 ```bash
-# 1. Install
 npm install
 npx playwright install --with-deps
-
-# 2. Set credentials
-cp .env.example .env
-# Fill in real test account credentials
-
-# 3. Run smoke tests (fast, Chromium only)
-npm run test:smoke
-
-# 4. Run all P1 tests
-npm run test:p1
-
-# 5. Run full regression
-npm run test:regression
-
-# 6. Open interactive Allure report
-npm run allure:serve
 ```
 
----
+Create `.env` from `.env.example`:
 
-## Project Structure
-
-```
-├── playwright.config.ts               # Browser matrix, Allure, BrowserStack toggle
-├── pages/                             # Page Object Models
-│   ├── BasePage.ts                    # Shared helpers + selector strategy docs
-│   ├── LoginPage.ts                   # getByLabel/getByRole login selectors
-│   ├── DashboardPage.ts               # getByRole nav, logout
-│   └── Screen1Page.ts                 # Full Screen1 POM with semantic selectors
-├── tests/regression/
-│   ├── 01-app-health.spec.ts          # Boot, JS errors, network, load time
-│   ├── 02-authentication.spec.ts      # Login, logout, SQL injection, XSS, session
-│   ├── 03-navigation.spec.ts          # Routes, links, back button, 404
-│   ├── 04-rbac.spec.ts                # Role-based access control (P1)
-│   ├── 05-screen1-interactions.spec.ts # Search, CRUD, pagination, mobile
-│   ├── 06-multi-tenant.spec.ts        # Data isolation between orgs
-│   └── 07-performance-accessibility.spec.ts # Load time, ARIA, keyboard nav
-├── fixtures/
-│   ├── testData.ts                    # Credentials, boundary values, UI strings
-│   └── customFixtures.ts              # Extended Playwright fixtures with POMs
-├── utils/
-│   └── allureHelpers.ts               # Allure step/attachment helpers
-└── .github/workflows/
-    └── regression.yml                 # GitHub Actions pipeline
+```env
+BASE_URL=https://personal-oajqxmji.outsystemscloud.com/QATestApp
+USE_BROWSERSTACK=false
+BROWSERSTACK_USER=your_bs_username
+BROWSERSTACK_KEY=your_bs_access_key
+BUILD_ID=local-build
 ```
 
----
-
-## Test Tags
-
-| Tag | Description | When to run |
-|---|---|---|
-| `@smoke` | Critical path only | Every commit / PR |
-| `@p1` | Release blockers | Every merge to main |
-| `@regression` | Full suite | Nightly / pre-release |
-| `@security` | Auth, injection, RBAC | Every merge |
-| `@rbac` | Role-based access | Every merge |
-| `@multitenant` | Data isolation | Every merge |
-| `@a11y` | Accessibility baseline | Nightly |
-| `@performance` | Load time | Nightly |
-| `@p2` | Non-blocking checks | Nightly |
-
----
-
-## Running Specific Tests
+## 6) Run Commands
 
 ```bash
-# Smoke only (fast gate)
-npx playwright test --grep @smoke --project=chromium
+# full suite
+npm test
 
-# All P1 tests across browsers
-npx playwright test --grep @p1
+# key groups
+npm run test:smoke
+npm run test:p1
+npm run test:regression
 
-# Security tests only
-npx playwright test --grep @security
+# debugging
+npm run test:headed
+npm run test:debug
 
-# Single spec file
-npx playwright test tests/regression/02-authentication.spec.ts
+# reporting
+npm run allure:serve
+npm run report
 
-# Debug mode (headed, step-through)
-npx playwright test --debug tests/regression/02-authentication.spec.ts
+# custom run history
+npm run logs
+npm run logs:fails
 ```
 
----
+PowerShell note: always quote tags, e.g. `--grep "@smoke"`.
 
-## CI/CD — GitHub Actions
+## 7) Test Suite Inventory
 
-Three jobs run automatically:
+### `01-app-health.spec.ts` (5 tests)
+- TC-HEALTH-001: dashboard loads without critical JS errors
+- TC-HEALTH-002: page title check (informational if empty)
+- TC-HEALTH-003: submit + name input visible
+- TC-HEALTH-004: screen1 links visible
+- TC-HEALTH-005: dashboard load under 5s
 
-| Job | Trigger | Browsers | Tests |
-|---|---|---|---|
-| `smoke` | Every push | Chromium | `@smoke` |
-| `regression-p1` | PR / merge | Chrome + Firefox + WebKit | `@p1` |
-| `browserstack` | Nightly / manual | Real devices via BrowserStack | `@p1` |
+### `02-two-screen-flow.spec.ts` (7 tests)
+- TC-FLOW-001: dashboard form rendering
+- TC-FLOW-002: submit navigates to screen1
+- TC-FLOW-003: screen1 contains both return links
+- TC-FLOW-004: tagged link returns to dashboard
+- TC-FLOW-005: untagged link returns to dashboard
+- TC-FLOW-006: submit selected by role (not by generated id)
+- TC-FLOW-007: round-trip has no critical JS errors
 
-Allure reports are published to GitHub Pages on every merge to `main`.
+### `07-performance-accessibility.spec.ts` (7 tests)
+- TC-PERF-001/002: load budgets
+- TC-A11Y-001..005: buttons/links/images/keyboard/input-label checks
 
-### Required Secrets
+Detailed step-by-step test documentation is in `docs/TEST-CASES.md`.
 
-| Secret | Value |
-|---|---|
-| `SUPER_ADMIN_USER` / `SUPER_ADMIN_PASS` | Super Admin test account |
-| `END_USER_USER` / `END_USER_PASS` | End User test account |
-| `TRAINING_ADMIN_USER` / `TRAINING_ADMIN_PASS` | Training Admin account |
-| `BROWSERSTACK_USER` / `BROWSERSTACK_KEY` | BrowserStack credentials |
+## 8) Design Decisions and Stability Fixes Already Applied
 
----
+- `playwright.config.ts` uses origin-only base URL:
+  - `https://personal-oajqxmji.outsystemscloud.com`
+  - tests navigate with explicit `/QATestApp/...` paths
+- OutSystems SPA timing handled with `waitForURL(...)` after submit/click actions.
+- `Screen1Page.expectLoaded()` anchors on the tagged link so optional untagged-link changes do not falsely fail unrelated tests.
+- TC-FLOW-003/004/005 navigate directly to Screen1 URL to isolate link checks from submit-button dependencies.
 
-## BrowserStack (Cross-Device)
+## 9) Reporting and Logs
 
-Set `USE_BROWSERSTACK=true` in `.env` or trigger the nightly workflow.
+Standard outputs:
+- `allure-results/`
+- `allure-report/`
+- `playwright-report/`
+- `test-results/junit.xml`
 
-Runs on: Chrome/Windows 11, Firefox/Windows 11, Safari/macOS Ventura, Edge/Windows 11.
+Custom history:
+- per run JSON: `logs/run-<timestamp>.json`
+- cumulative index: `logs/run-history.jsonl`
 
----
+View examples:
 
-## Appium / Mobile Note
-
-If the CSI app has a mobile (Cordova hybrid) component, configure Appium 2.0 to use the **WebView context**:
-
-```javascript
-// Switch to WebView context in Appium for OutSystems Cordova apps
-const contexts = await driver.getContexts();
-const webview = contexts.find(c => c.startsWith('WEBVIEW'));
-await driver.switchContext(webview);
-// Now use the same Playwright-style selectors (ARIA roles, visible text)
+```bash
+npm run logs -- --last 20
+npm run logs -- --fails
+npm run logs -- --run <runId>
 ```
 
-The same selector strategy applies — no generated IDs.
+## 10) CI Pipeline Summary
 
----
+Workflow: `.github/workflows/regression.yml`
 
-## Known Gaps & Next Steps
+- `smoke` job: Chromium smoke gate
+- `regression-p1` job: Chromium/Firefox/WebKit P1 matrix
+- `browserstack` job: optional BrowserStack run (nightly/manual)
+- `allure-report` job: generate and publish Allure artifacts
 
-1. **Credentials**: Replace `.env.example` placeholders with real test accounts.
-2. **Cross-tenant data**: `06-multi-tenant.spec.ts` uses placeholder org names (`OtherCorp`). Update with real org names seeded in the test environment.
-3. **Module-specific tests**: Add specs for Training, Phishing, Policy Management, Incident Response etc. under `tests/regression/` following the same POM pattern.
-4. **Future ODC projects** (Macau etc.): Mandate `data-testid` from day one — request devs add the Attributes property to all interactive elements in OutSystems ODC.
-#   A v o t e c h - - - d e m o - - - t e s t  
- 
+## 11) BrowserStack Usage
+
+Set:
+- `USE_BROWSERSTACK=true`
+- `BROWSERSTACK_USER`
+- `BROWSERSTACK_KEY`
+
+Configured matrix:
+- Chrome Windows 11
+- Firefox Windows 11
+- Safari macOS Ventura
+- Edge Windows 11
+
+## 12) Known Caveats
+
+- `README` (this file) is now the source of truth.
+- `pages/Screen2Page.ts` and `fixtures/customFixtures.ts` still contain legacy references from older iterations and are not used by the current regression specs.
+- The demo app has no auth scope in current tests.
+
+## 13) Operational Guidance for CSI Expansion
+
+- Start with P1 flows first for earliest value.
+- Add RBAC and multi-tenant datasets as separate fixtures (Org A vs Org B).
+- For email assertions, plan a mailbox API tool (e.g., Mailosaur) when needed.
+- Keep selector standards:
+  - CSI/O11: semantic selectors as baseline
+  - Macau/ODC: enforce `data-testid` conventions
+
+## 14) Quick FAQ
+
+### Why did unrelated tests fail when button/link text changed?
+They shared setup steps or text-bound selectors. Fixes were made so targeted tests are isolated and stable.
+
+### Should all Screen1 checks use `data-testid`?
+Only the tagged link should. The untagged link should intentionally remain role/text based to validate O11 no-tag scenarios.
+
+### Is BrowserStack cost infrastructure load on client hosting?
+No. It is a separate SaaS subscription for cloud browser/device execution.

@@ -9,6 +9,7 @@
     "test:smoke": "playwright test --grep \"@smoke\" --project=chromium",
     "test:p1": "playwright test --grep \"@p1\"",
     "test:regression": "playwright test --grep \"@regression\"",
+    "test:visual": "playwright test --project=vrt-chromium",
     "allure:generate": "allure generate allure-results --clean -o allure-report",
     "allure:open": "allure open allure-report",
     "allure:serve": "allure serve allure-results",

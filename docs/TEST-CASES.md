@@ -3,8 +3,8 @@
 **Project:** AvoTech CSI Platform — QATestApp Demo  
 **Application URL:** https://personal-oajqxmji.outsystemscloud.com/QATestApp  
 **Framework:** Playwright 1.42 (TypeScript)  
-**Document Version:** 1.0  
-**Last Updated:** 2026-04-13  
+**Document Version:** 1.1  
+**Last Updated:** 2026-04-21  
 **Author:** QA Team / Dax Manning  
 **Status:** Active — All P1 tests verified passing
 
@@ -47,7 +47,8 @@ OutSystems O11 auto-regenerates DOM element IDs on every publish (e.g. `#b4-Inpu
 | Two-Screen Flow | `02-two-screen-flow.spec.ts` | 7 | P1 |
 | Performance | `07-performance-accessibility.spec.ts` | 2 | P2 |
 | Accessibility | `07-performance-accessibility.spec.ts` | 5 | P2 |
-| **Total** | | **19** | |
+| Visual regression (VRT) | `tests/visual/qatestapp-vrt.spec.ts` | 2 | `@vrt` (Chromium baselines) |
+| **Total** | | **21** | |
 
 ---
 
@@ -586,6 +587,69 @@ This test serves as documented proof for the client that the automation does not
 
 ---
 
+## Module 5 — Visual regression (VRT)
+
+**Suite:** `tests/visual/qatestapp-vrt.spec.ts`  
+**Tags:** `@vrt @visual`  
+**Playwright project:** `vrt-chromium` (fixed 1280×720 viewport; snapshots are **not** run on the full Firefox/WebKit/mobile matrix)
+
+### Scope and stakeholder notes
+
+| URL captured | Purpose |
+|---|---|
+| `/QATestApp/` | App entry (full-page screenshot). **Not** OutSystems Service Center — VRT never targets `/ServiceCenter` or builder URLs. |
+| `/QATestApp/Screen1` | Results screen (full-page screenshot). |
+
+**Gregg’s requirement (diff / “shadow” of what moved):** When a screenshot assertion fails, the Playwright **HTML report** (`npx playwright show-report`) shows **Expected**, **Actual**, and **Diff** side by side. The Diff image highlights changed pixels (CSS/layout shifts, moved controls, etc.) — comparable to visual tools that overlay a change mask. Video recordings are **not** a substitute for this pixel comparison.
+
+**Baselines:** PNG snapshots live under `tests/visual/qatestapp-vrt.spec.ts-snapshots/` (platform-specific names, e.g. `*-vrt-chromium-win32.png`). Commit updated images when the UI change is intentional.
+
+**Refresh baselines after an intentional UI change**
+
+```powershell
+npx playwright test --project=vrt-chromium --update-snapshots
+```
+
+---
+
+### VRT-001
+
+| Field | Detail |
+|---|---|
+| **ID** | VRT-001 |
+| **Title** | App entry (`/QATestApp/`) matches approved baseline |
+| **Tags** | `@vrt @visual` |
+
+**Steps**
+
+1. Navigate to `/QATestApp/`
+2. Capture full-page screenshot and compare to committed baseline
+
+**Expected Results**
+
+- Screenshot matches baseline within configured tolerance (`maxDiffPixels` / `threshold` in `playwright.config.ts`).
+
+---
+
+### VRT-002
+
+| Field | Detail |
+|---|---|
+| **ID** | VRT-002 |
+| **Title** | Screen1 (`/QATestApp/Screen1`) matches approved baseline |
+| **Tags** | `@vrt @visual` |
+
+**Steps**
+
+1. Navigate to `/QATestApp/Screen1`
+2. Capture full-page screenshot and compare to committed baseline
+
+**Expected Results**
+
+- Screenshot matches baseline within configured tolerance.
+
+---
+
 ## Test Execution Summary
 
 ### Run command reference
@@ -595,7 +659,8 @@ This test serves as documented proof for the client that the automation does not
 | `npx playwright test --grep "@smoke" --project=chromium` | All 12 smoke/P1 tests, Chromium only |
 | `npx playwright test --grep "@p1"` | All P1 tests, all browsers |
 | `npx playwright test --grep "@p2"` | Performance + accessibility tests |
-| `npx playwright test --grep "@regression"` | Full suite |
+| `npx playwright test --grep "@regression"` | All `@regression`-tagged functional tests; VRT uses `@vrt` — run `npm run test:visual` for snapshots |
+| `npm run test:visual` | Visual regression only (`vrt-chromium` project) |
 | `npx playwright test --headed --grep "@smoke" --project=chromium` | Smoke tests with browser visible |
 
 ### View results
